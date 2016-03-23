@@ -2594,15 +2594,15 @@ This directive was first introduced in the `v0.5.0rc1` release.
 lua_socket_log_errors
 ---------------------
 
-**syntax:** *lua_socket_log_errors on|off*
+**语法:** *lua_socket_log_errors on|off*
 
-**default:** *lua_socket_log_errors on*
+**默认值:** *lua_socket_log_errors on*
 
-**context:** *http, server, location*
+**上下文:** *http, server, location*
 
-This directive can be used to toggle error logging when a failure occurs for the TCP or UDP cosockets. If you are already doing proper error handling and logging in your Lua code, then it is recommended to turn this directive off to prevent data flushing in your nginx error log files (which is usually rather expensive).
+该指令可以用于当TCP或UDP cosockets失败的时候触发错误日志。如果你早已做了错误处理并在你的Lua代码中记录了日志，建议将此指令关掉，否则会有多于的数据flush到你的nginx错误日志（一般情况下是比较消耗资源的）。
 
-This directive was first introduced in the `v0.5.13` release.
+该指令首次在 `v0.5.13` 版本中推出。
 
 [Back to TOC](#directives)
 
@@ -2690,32 +2690,33 @@ See also [lua_ssl_trusted_certificate](#lua_ssl_trusted_certificate).
 lua_http10_buffering
 --------------------
 
-**syntax:** *lua_http10_buffering on|off*
+**语法:** *lua_http10_buffering on|off*
 
-**default:** *lua_http10_buffering on*
+**默认值:** *lua_http10_buffering on*
 
-**context:** *http, server, location, location-if*
+**上下文:** *http, server, location, location-if*
 
-Enables or disables automatic response buffering for HTTP 1.0 (or older) requests. This buffering mechanism is mainly used for HTTP 1.0 keep-alive which replies on a proper `Content-Length` response header.
+允许或者禁止自动为HTTP1.0（或更老的版本）缓冲response。此缓冲机制主要用于HTTP 1.0 keep-alive，设置一个适当`Content-Length`响应头。
 
-If the Lua code explicitly sets a `Content-Length` response header before sending the headers (either explicitly via [ngx.send_headers](#ngxsend_headers) or implicitly via the first [ngx.say](#ngxsay) or [ngx.print](#ngxprint) call), then the HTTP 1.0 response buffering will be disabled even when this directive is turned on.
+如果在发送响应头（通过使用[ngx.send_headers](#ngxsend_headers)或隐式的[ngx.say](#ngxsay) 或 [ngx.print](#ngxprint)）之前，在Lua代码中明确设置了`Content-Length`响应头的时候，即使此指令的值为 on，也不会生效。
 
-To output very large response data in a streaming fashion (via the [ngx.flush](#ngxflush) call, for example), this directive MUST be turned off to minimize memory usage.
+为了在流中（例如，[ngx.flush](#ngxflush)）响应特别大的数据，一定关闭此指令以减少内存的消耗。
 
-This directive is turned `on` by default.
+该指令默认情况下的开启的。
 
-This directive was first introduced in the `v0.5.0rc19` release.
+该指令首次在 `v0.5.0rc19` 版本中推出。
+
 
 [Back to TOC](#directives)
 
 rewrite_by_lua_no_postpone
 --------------------------
 
-**syntax:** *rewrite_by_lua_no_postpone on|off*
+**语法:** *rewrite_by_lua_no_postpone on|off*
 
-**default:** *rewrite_by_lua_no_postpone off*
+**默认值:** *rewrite_by_lua_no_postpone off*
 
-**context:** *http*
+**上下文:** *http*
 
 Controls whether or not to disable postponing [rewrite_by_lua](#rewrite_by_lua)* directives to run at the end of the `rewrite` request-processing phase. By default, this directive is turned off and the Lua code is postponed to run at the end of the `rewrite` phase.
 
