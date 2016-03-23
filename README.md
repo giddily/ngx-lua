@@ -13,45 +13,45 @@ ngx_http_lua_module - Embed the power of Lua into Nginx HTTP Servers.
 目录
 =================
 
-* [名称](#name)
-* [状态](#status)
-* [版本](#version)
-* [摘要](#synopsis)
-* [简介](#description)
-* [典型用法](#typical-uses)
-* [Nginx 兼容](#nginx-compatibility)
-* [安装](#installation)
-    * [已一个动态模块构建](#building-as-a-dynamic-module)
+* [名称](#名称)
+* [状态](#状态)
+* [版本](#版本)
+* [摘要](#摘要)
+* [简介](#简介)
+* [典型用法](#典型用法)
+* [Nginx 兼容](#Nginx 兼容)
+* [安装](#安装)
+    * [以一个动态模块构建](#以一个动态模块构建)
     * [C Macro Configurations](#c-macro-configurations)
-    * [安装在 Ubuntu 11.10](#installation-on-ubuntu-1110)
-* [社区](#community)
-    * [英文邮件列表](#english-mailing-list)
-    * [中文邮件列表](#chinese-mailing-list)
-* [代码仓库](#code-repository)
+    * [安装在 Ubuntu 11.10](#安装在 Ubuntu 11.10)
+* [社区](#社区)
+    * [英文邮件列表](#英文邮件列表)
+    * [中文邮件列表](#中文邮件列表)
+* [代码仓库](#代码仓库)
 * [Bugs and Patches](#bugs-and-patches)
 * [Lua/LuaJIT bytecode support](#lualuajit-bytecode-support)
-* [支持系统环境变量](#system-environment-variable-support)
-* [支持HTTP 1.0](#http-10-support)
+* [支持系统环境变量](#支持系统环境变量)
+* [支持HTTP 1.0](#支持HTTP 1.0)
 * [Statically Linking Pure Lua Modules](#statically-linking-pure-lua-modules)
 * [Data Sharing within an Nginx Worker](#data-sharing-within-an-nginx-worker)
-* [已知问题](#known-issues)
-    * [TCP socket 连接操作问题](#tcp-socket-connect-operation-issues)
+* [已知问题](#已知问题)
+    * [TCP socket 连接操作问题](#TCP-socket-连接操作问题)
     * [Lua Coroutine Yielding/Resuming](#lua-coroutine-yieldingresuming)
-    * [Lua 变量作用域](#lua-variable-scope)
+    * [Lua 变量作用域](#lua-变量作用域)
     * [Locations Configured by Subrequest Directives of Other Modules](#locations-configured-by-subrequest-directives-of-other-modules)
     * [Cosockets Not Available Everywhere](#cosockets-not-available-everywhere)
-    * [特殊字符转义](#special-escaping-sequences)
-    * [不支持SSI](#mixing-with-ssi-not-supported)
-    * [不完全支持SPDY Mode](#spdy-mode-not-fully-supported)
+    * [特殊字符转义](#特殊字符转义)
+    * [不支持SSI](#不支持SSI)
+    * [不完全支持SPDY Mode](#不完全支持SPDY-Mode)
     * [Missing data on short circuited requests](#missing-data-on-short-circuited-requests)
 * [TODO](#todo)
-* [更新列表](#changes)
+* [更新列表](#更新列表)
 * [Test Suite](#test-suite)
 * [Copyright and License](#copyright-and-license)
-* [参考](#see-also)
-* [指令](#directives)
+* [参考](#参考)
+* [指令](#指令)
 * [Nginx API for Lua](#nginx-api-for-lua)
-* [过时的章节](#obsolete-sections)
+* [过时的章节](#过时的章节)
     * [Special PCRE Sequences](#special-pcre-sequences)
 
 状态
@@ -187,13 +187,10 @@ ngx_http_lua_module - Embed the power of Lua into Nginx HTTP Servers.
 描述
 ===========
 
-This module embeds Lua, via the standard Lua 5.1 interpreter or [LuaJIT 2.0/2.1](http://luajit.org/luajit.html), into Nginx and by leveraging Nginx's subrequests, allows the integration of the powerful Lua threads (Lua coroutines) into the Nginx event model.
 此模块将标准版的Lua 5.1或[LuaJIT 2.0/2.1](http://luajit.org/luajit.html)嵌入到nginx，利用Nginx子请求的优势，允许强大的Lua线程（Lua coroutines）集成到Nginx的事件模型中。
 
-Unlike [Apache's mod_lua](https://httpd.apache.org/docs/trunk/mod/mod_lua.html) and [Lighttpd's mod_magnet](http://redmine.lighttpd.net/wiki/1/Docs:ModMagnet), Lua code executed using this module can be *100% non-blocking* on network traffic as long as the [Nginx API for Lua](#nginx-api-for-lua) provided by this module is used to handle requests to upstream services such as MySQL, PostgreSQL, Memcached, Redis, or upstream HTTP web services.
+不像[Apache's mod_lua](https://httpd.apache.org/docs/trunk/mod/mod_lua.html) 和 [Lighttpd's mod_magnet](http://redmine.lighttpd.net/wiki/1/Docs:ModMagnet)，使用此模块执行Lua代码可以做到*100%非阻塞*，只要使用由此模块提供的[Nginx API for Lua](#nginx-api-for-lua)来处理请求到upstream服务，比如，MySQL, PostgreSQL, Memcached, Redis, 或 upstream HTTP web services。
 
-
-At least the following Lua libraries and Nginx modules can be used with this ngx_lua module:
 ngx_lua模块保证可以和以下Lua库和Nginx模块使用：
 
 * [lua-resty-memcached](https://github.com/openresty/lua-resty-memcached)
@@ -213,12 +210,12 @@ ngx_lua模块保证可以和以下Lua库和Nginx模块使用：
 * [ngx_proxy](http://nginx.org/en/docs/http/ngx_http_proxy_module.html)
 * [ngx_fastcgi](http://nginx.org/en/docs/http/ngx_http_fastcgi_module.html)
 
-Almost all the Nginx modules can be used with this ngx_lua module by means of [ngx.location.capture](#ngxlocationcapture) or [ngx.location.capture_multi](#ngxlocationcapture_multi) but it is recommended to use those `lua-resty-*` libraries instead of creating subrequests to access the Nginx upstream modules because the former is usually much more flexible and memory-efficient.
+几乎所有Nginx模块可以和此模块通过[ngx.location.capture](#ngxlocationcapture) 或 [ngx.location.capture_multi](#ngxlocationcapture_multi)一起使用，但是更加推荐使用`lua-resty-*`库替代其他模块创建子请求或access Nginx upstream模块，因为前者更加灵活、更省内存。
 
-
-The Lua interpreter or LuaJIT instance is shared across all the requests in a single nginx worker process but request contexts are segregated using lightweight Lua coroutines.
+Lua执行器或者LuaJIT实例在一个nginx worker进程所有的请求中共享，但是请求上下文使用轻量级的Lua协程来进行了隔离。
 
 Loaded Lua modules persist in the nginx worker process level resulting in a small memory footprint in Lua even when under heavy loads.
+
 
 This module is plugged into NGINX's "http" subsystem so it can only speaks downstream communication protocols in the HTTP family (HTTP 0.9/1.0/1.1/2.0, WebSockets, and etc).
 If you want to do generic TCP communications with the downstream clients, then you should use the [ngx_stream_lua](https://github.com/openresty/stream-lua-nginx-module#readme) module instead
