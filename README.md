@@ -1070,11 +1070,11 @@ lua_use_default_type
 
 **context:** *http, server, location, location if*
 
-Specifies whether to use the MIME type specified by the [default_type](http://nginx.org/en/docs/http/ngx_http_core_module.html#default_type) directive for the default value of the `Content-Type` response header. If you do not want a default `Content-Type` response header for your Lua request handlers, then turn this directive off.
+指定是否使用[default_type](http://nginx.org/en/docs/http/ngx_http_core_module.html#default_type) 来设置默认响应头Content-Type的MIMI类型。如果不想使用lua指定默认响应头Content-Type,可以将该指令设置为off。
 
-This directive is turned on by default.
+该指令默认是on。
 
-This directive was first introduced in the `v0.9.1` release.
+该指令最早在v0.9.1中被释出。
 
 [Back to TOC](#directives)
 
