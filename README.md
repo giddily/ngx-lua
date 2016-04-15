@@ -5891,9 +5891,9 @@ ngx.shared.DICT
 
 **context:** init_by_lua*, init_worker_by_lua*, set_by_lua*, rewrite_by_lua*, access_by_lua*, content_by_lua*, header_filter_by_lua*, body_filter_by_lua*, log_by_lua*, ngx.timer.*, balancer_by_lua*, ssl_certificate_by_lua*
 
-该指令名为DICT并定义在lua_shared_dict指令，是一个基于shm-based Lua字典对象来使用共享内存区域的对象。
+在Lua中获取一个共享内存对象，这个对象的名字使用lua_shared_dict指令定义。
 
-共享内存区域是总是被所有的nginx worker进程们所共享（只在当前的nginx server实例，比如两个nginx server之间肯定不能被共享）。
+共享内存区域总是被所有的nginx worker进程们所共享（只在当前的nginx server实例，比如两个nginx server之间肯定不能被共享）。
 
 如下列表为该字典对象所提供的方法：
 
