@@ -2973,11 +2973,11 @@ Nginx API for Lua
 
 Introduction
 ------------
-The various `*_by_lua` and `*_by_lua_file` configuration directives serve as gateways to the Lua API within the `nginx.conf` file. The Nginx Lua API described below can only be called within the user Lua code run in the context of these configuration directives.
+各种各样的`*_by_lua` 和 `*_by_lua_file`配置指令作为Lua API在`nginx.conf`文件的入口。下面所描述的Nginx Lua API只能在用户的Lua代码中运行。
 
-The API is exposed to Lua in the form of two standard packages `ngx` and `ndk`. These packages are in the default global scope within ngx_lua and are always available within ngx_lua directives.
+这些API以`ngx` 和 `ndk`两个标准包的形式暴露给Lua。这些包是默认就由ngx_lua存在于全局作用域，并对ngx_lua指令可用。
 
-The packages can be introduced into external Lua modules like this:
+如下代码用来介绍该报的使用方式：
 
 ```lua
 
@@ -2992,9 +2992,9 @@ The packages can be introduced into external Lua modules like this:
  return _M
 ```
 
-Use of the [package.seeall](http://www.lua.org/manual/5.1/manual.html#pdf-package.seeall) flag is strongly discouraged due to its various bad side-effects.
+由于她各种不好的效果，强烈不推荐使用[package.seeall](http://www.lua.org/manual/5.1/manual.html#pdf-package.seeall)。
 
-It is also possible to directly require the packages in external Lua modules:
+还可以直接在代码中require这些包：
 
 ```lua
 
@@ -3004,15 +3004,15 @@ It is also possible to directly require the packages in external Lua modules:
 
 The ability to require these packages was introduced in the `v0.2.1rc19` release.
 
-Network I/O operations in user code should only be done through the Nginx Lua API calls as the Nginx event loop may be blocked and performance drop off dramatically otherwise. Disk operations with relatively small amount of data can be done using the standard Lua `io` library but huge file reading and writing should be avoided wherever possible as they may block the Nginx process significantly. Delegating all network and disk I/O operations to Nginx's subrequests (via the [ngx.location.capture](#ngxlocationcapture) method and similar) is strongly recommended for maximum performance.
+在用户的代码中对网络的I/O操作应该全部使用Lua API来调用，以免阻塞Nginx event loop或带来很差的性能。对相对较小的数据的磁盘操作可以用标准的Lua `io`库来完成，但是应该避免对大文件的读写，以免阻塞Nginx进程。为了获得更好的性能，强烈推荐使用Nginx的子请求(通过 [ngx.location.capture](#ngxlocationcapture) 或其他类似的方式) 来代理所有的网络和磁盘I/O操作。
 
 [Back to TOC](#nginx-api-for-lua)
 
 ngx.arg
 -------
-**syntax:** *val = ngx.arg\[index\]*
+**语法:** *val = ngx.arg\[index\]*
 
-**context:** *set_by_lua&#42;, body_filter_by_lua&#42;*
+**上下文:** *set_by_lua&#42;, body_filter_by_lua&#42;*
 
 When this is used in the context of the [set_by_lua](#set_by_lua) or [set_by_lua_file](#set_by_lua_file) directives, this table is read-only and holds the input arguments to the config directives:
 
@@ -5884,18 +5884,18 @@ This feature was first introduced in the `v0.2.1rc15` release.
 [Back to TOC](#nginx-api-for-lua)
 
 ngx.shared.DICT
----------------
-**syntax:** *dict = ngx.shared.DICT*
+---
+**syntax:** dict = ngx.shared.DICT
 
-**syntax:** *dict = ngx.shared\[name_var\]*
+**syntax:** dict = ngx.shared[name_var]
 
-**context:** *init_by_lua&#42;, init_worker_by_lua&#42;, set_by_lua&#42;, rewrite_by_lua&#42;, access_by_lua&#42;, content_by_lua&#42;, header_filter_by_lua&#42;, body_filter_by_lua&#42;, log_by_lua&#42;, ngx.timer.&#42;, balancer_by_lua&#42;, ssl_certificate_by_lua&#42;*
+**context:** init_by_lua*, init_worker_by_lua*, set_by_lua*, rewrite_by_lua*, access_by_lua*, content_by_lua*, header_filter_by_lua*, body_filter_by_lua*, log_by_lua*, ngx.timer.*, balancer_by_lua*, ssl_certificate_by_lua*
 
-Fetching the shm-based Lua dictionary object for the shared memory zone named `DICT` defined by the [lua_shared_dict](#lua_shared_dict) directive.
+该指令名为DICT并定义在lua_shared_dict指令，是一个基于shm-based Lua字典对象来使用共享内存区域的对象。
 
-Shared memory zones are always shared by all the nginx worker processes in the current nginx server instance.
+共享内存区域是总是被所有的nginx worker进程们所共享（只在当前的nginx server实例，比如两个nginx server之间肯定不能被共享）。
 
-The resulting object `dict` has the following methods:
+如下列表为该字典对象所提供的方法：
 
 * [get](#ngxshareddictget)
 * [get_stale](#ngxshareddictget_stale)
@@ -5910,151 +5910,135 @@ The resulting object `dict` has the following methods:
 * [flush_expired](#ngxshareddictflush_expired)
 * [get_keys](#ngxshareddictget_keys)
 
-Here is an example:
+一个简单的栗子如下：
 
-```nginx
+	http {
+		lua_shared_dict dogs 10m;
+		server {
+			location /set {
+				content_by_lua '
+					local dogs = ngx.shared.dogs
+					dogs:set("Jim", 8)
+					ngx.say("STORED")
+				';
+	        }
+	        location /get {
+				content_by_lua '
+					local dogs = ngx.shared.dogs
+					ngx.say(dogs:get("Jim"))
+	            ';
+	        }
+		}
+	}
 
- http {
-     lua_shared_dict dogs 10m;
-     server {
-         location /set {
-             content_by_lua '
-                 local dogs = ngx.shared.dogs
-                 dogs:set("Jim", 8)
-                 ngx.say("STORED")
-             ';
-         }
-         location /get {
-             content_by_lua '
-                 local dogs = ngx.shared.dogs
-                 ngx.say(dogs:get("Jim"))
-             ';
-         }
-     }
- }
-```
+测试上面的代码：
+	
+	$ curl localhost/set
+	STORED
+	
+	$ curl localhost/get
+	8
+	
+	$ curl localhost/get
+	8
 
-Let us test it:
+由于dogs字典存在于共享内存并对所有的nginx worker进程可见，当我们请求`/get`的时候，不论nginx有多少个workers都会一直返回`8`。
 
-```bash
+该共享字典的内容在server config reload（通过发送一个`HUP`信号到nginx进程或使用 `-s reload` 命令）的情况下也将一直保持他的内容。
 
- $ curl localhost/set
- STORED
+当nginx server退出的时候，共享字典的内容将会丢失。
 
- $ curl localhost/get
- 8
-
- $ curl localhost/get
- 8
-```
-
-The number `8` will be consistently output when accessing `/get` regardless of how many Nginx workers there are because the `dogs` dictionary resides in the shared memory and visible to *all* of the worker processes.
-
-The shared dictionary will retain its contents through a server config reload (either by sending the `HUP` signal to the Nginx process or by using the `-s reload` command-line option).
-
-The contents in the dictionary storage will be lost, however, when the Nginx server quits.
-
-This feature was first introduced in the `v0.3.1rc22` release.
+该api首次发行在版本v0.3.1rc22。
 
 [Back to TOC](#nginx-api-for-lua)
 
 ngx.shared.DICT.get
--------------------
-**syntax:** *value, flags = ngx.shared.DICT:get(key)*
+---
+**syntax:** value, flags = ngx.shared.DICT:get(key)
 
-**context:** *set_by_lua&#42;, rewrite_by_lua&#42;, access_by_lua&#42;, content_by_lua&#42;, header_filter_by_lua&#42;, body_filter_by_lua&#42;, log_by_lua&#42;, ngx.timer.&#42;, balancer_by_lua&#42;, ssl_certificate_by_lua&#42;*
+**context:** set_by_lua*, rewrite_by_lua*, access_by_lua*, content_by_lua*, header_filter_by_lua*, body_filter_by_lua*, log_by_lua*, ngx.timer.*, balancer_by_lua*, ssl_certificate_by_lua*
 
-Retrieving the value in the dictionary [ngx.shared.DICT](#ngxshareddict) for the key `key`. If the key does not exist or has been expired, then `nil` will be returned.
+从ngx.shared.DICT字典中通过key `key`获取对应的值。如果`key`不存在或已过期，将会返回`nil`。
 
-In case of errors, `nil` and a string describing the error will be returned.
+当发生errors的情况下，将会返回`nil`和一个描述错误信息的字符串。
 
-The value returned will have the original data type when they were inserted into the dictionary, for example, Lua booleans, numbers, or strings.
+通过该api获取的值的数据类型和插入到该字典中的值一致，例如，Lua booleans, numbers, or strings。
 
-The first argument to this method must be the dictionary object itself, for example,
+此方法的第一个参数必须是共享字典对象本身，例如
 
-```lua
+	local cats = ngx.shared.cats
+	local value, flags = cats.get(cats, "Marry")
 
- local cats = ngx.shared.cats
- local value, flags = cats.get(cats, "Marry")
-```
+或者使用Lua对方法调用的语法糖，如：
 
-or use Lua's syntactic sugar for method calls:
+	local cats = ngx.shared.cats
+	local value, flags = cats:get("Marry")
 
-```lua
+以上两种方式功能上是一样的。
 
- local cats = ngx.shared.cats
- local value, flags = cats:get("Marry")
-```
+如果`flags`的值是0（默认值），则代表没有`flags`返回。
 
-These two forms are fundamentally equivalent.
-
-If the user flags is `0` (the default), then no flags value will be returned.
-
-This feature was first introduced in the `v0.3.1rc22` release.
+该api首次发行在版本v0.3.1rc22。
 
 See also [ngx.shared.DICT](#ngxshareddict).
 
 [Back to TOC](#nginx-api-for-lua)
 
 ngx.shared.DICT.get_stale
--------------------------
-**syntax:** *value, flags, stale = ngx.shared.DICT:get_stale(key)*
+---
+**syntax:** value, flags, stale = ngx.shared.DICT:get_stale(key)
 
-**context:** *set_by_lua&#42;, rewrite_by_lua&#42;, access_by_lua&#42;, content_by_lua&#42;, header_filter_by_lua&#42;, body_filter_by_lua&#42;, log_by_lua&#42;, ngx.timer.&#42;, balancer_by_lua&#42;, ssl_certificate_by_lua&#42;*
+**context:** set_by_lua*, rewrite_by_lua*, access_by_lua*, content_by_lua*, header_filter_by_lua*, body_filter_by_lua*, log_by_lua*, ngx.timer.*, balancer_by_lua*, ssl_certificate_by_lua*
 
-Similar to the [get](#ngxshareddictget) method but returns the value even if the key has already expired.
+与get方法基本上一致，不同点是，即使是`key`所对应的值已过期也会返回原来的值。
 
-Returns a 3rd value, `stale`, indicating whether the key has expired or not.
+第三个返回值`stale`，用来标识`key`是否已经过期。
 
-Note that the value of an expired key is not guaranteed to be available so one should never rely on the availability of expired items.
+值得注意的是，在过期状态下，第一个返回值`value`不能保证总是返回值，所以不能绝对的依赖此方法。
 
-This method was first introduced in the `0.8.6` release.
+该api首次发行在版本0.8.6。
 
 See also [ngx.shared.DICT](#ngxshareddict).
 
 [Back to TOC](#nginx-api-for-lua)
 
 ngx.shared.DICT.set
--------------------
-**syntax:** *success, err, forcible = ngx.shared.DICT:set(key, value, exptime?, flags?)*
+---
+**syntax:** success, err, forcible = ngx.shared.DICT:set(key, value, exptime?, flags?)
 
-**context:** *init_by_lua&#42;, set_by_lua&#42;, rewrite_by_lua&#42;, access_by_lua&#42;, content_by_lua&#42;, header_filter_by_lua&#42;, body_filter_by_lua&#42;, log_by_lua&#42;, ngx.timer.&#42;, balancer_by_lua&#42;, ssl_certificate_by_lua&#42;*
+**context:** init_by_lua*, set_by_lua*, rewrite_by_lua*, access_by_lua*, content_by_lua*, header_filter_by_lua*, body_filter_by_lua*, log_by_lua*, ngx.timer.*, balancer_by_lua*, ssl_certificate_by_lua*
 
-Unconditionally sets a key-value pair into the shm-based dictionary [ngx.shared.DICT](#ngxshareddict). Returns three values:
+无条件的设置一对 key-value 到shm-based字典对象`ngx.shared.DICT`。 返回三个值：
 
-* `success`: boolean value to indicate whether the key-value pair is stored or not.
-* `err`: textual error message, can be `"no memory"`.
-* `forcible`: a boolean value to indicate whether other valid items have been removed forcibly when out of storage in the shared memory zone.
+- `success`:一个boolean值，用来标识key-value对是否设置成功。
+- `err`:文本形式的错误信息，比如，`"no memory"`。
+- `forcible`:一个boolean值，用来标识在共享内存的空间不足情况下，是否有其他有效的值是否被强制移除。
 
-The `value` argument inserted can be Lua booleans, numbers, strings, or `nil`. Their value type will also be stored into the dictionary and the same data type can be retrieved later via the [get](#ngxshareddictget) method.
+`value`参数可以是booleans, numbers, strings, 或 `nil`。 他们对应的类型也会一并存到字典当中，并在未来`get`的时候获取到的值的时候也是携带着正确的类型。
 
-The optional `exptime` argument specifies expiration time (in seconds) for the inserted key-value pair. The time resolution is `0.001` seconds. If the `exptime` takes the value `0` (which is the default), then the item will never expire.
+可选的参数`exptime`参数标识设置的key-value对的过期时间（秒级别）。 时间的精确度可以到`0.001`秒。 如果`exptime`的值是0（默认值），则永远不会过期。
 
-The optional `flags` argument specifies a user flags value associated with the entry to be stored. It can also be retrieved later with the value. The user flags is stored as an unsigned 32-bit integer internally. Defaults to `0`. The user flags argument was first introduced in the `v0.5.0rc2` release.
+> *由于当共享内存空间不足时候会移除部分key-value对，所以永远不会过期不代表永远能取到值。---译者注*
 
-When it fails to allocate memory for the current key-value item, then `set` will try removing existing items in the storage according to the Least-Recently Used (LRU) algorithm. Note that, LRU takes priority over expiration time here. If up to tens of existing items have been removed and the storage left is still insufficient (either due to the total capacity limit specified by [lua_shared_dict](#lua_shared_dict) or memory segmentation), then the `err` return value will be `no memory` and `success` will be `false`.
+The optional flags argument specifies a user flags value associated with the entry to be stored. It can also be retrieved later with the value. The user flags is stored as an unsigned 32-bit integer internally. Defaults to 0. The user flags argument was first introduced in the v0.5.0rc2 release.
 
-If this method succeeds in storing the current item by forcibly removing other not-yet-expired items in the dictionary via LRU, the `forcible` return value will be `true`. If it stores the item without forcibly removing other valid items, then the return value `forcible` will be `false`.
+当为当前的key-value对申请内存失败时，`set`会根据最近-最少使用（LRU）算法来尝试移除一些key-value对。 Note that, LRU takes priority over expiration time here. 如果多达几十对key-value移除之后，内存空间依旧不够（由于设置的`lua_shared_dict`的空间限制或内存段），`err`所返回的值是`no memory`， `success`返回`false`。
 
-The first argument to this method must be the dictionary object itself, for example,
+如果此方法通过LRU算法强制移除一些还未过期的key-value对来执行成功，返回值`forible`将会是`true`。 如果并没有通过强制移除一些未过期的key-value对就执行成功，返回值`forible`将会是`false`。
 
-```lua
+该方法的第一个参数必须是字典对象本身，例如：
 
- local cats = ngx.shared.cats
- local succ, err, forcible = cats.set(cats, "Marry", "it is a nice cat!")
-```
+	local cats = ngx.shared.cats
+	local succ, err, forcible = cats.set(cats, "Marry", "it is a nice cat!")
 
-or use Lua's syntactic sugar for method calls:
+或者使用Lua对方法调用的语法糖，如：
 
-```lua
+	local cats = ngx.shared.cats
+	local succ, err, forcible = cats:set("Marry", "it is a nice cat!")
 
- local cats = ngx.shared.cats
- local succ, err, forcible = cats:set("Marry", "it is a nice cat!")
-```
+以上两种方式功能是一样的。
 
-These two forms are fundamentally equivalent.
-
-This feature was first introduced in the `v0.3.1rc22` release.
+该api首次发行在版本v0.3.1rc22。
 
 Please note that while internally the key-value pair is set atomically, the atomicity does not go across the method call boundary.
 
@@ -6063,144 +6047,144 @@ See also [ngx.shared.DICT](#ngxshareddict).
 [Back to TOC](#nginx-api-for-lua)
 
 ngx.shared.DICT.safe_set
-------------------------
-**syntax:** *ok, err = ngx.shared.DICT:safe_set(key, value, exptime?, flags?)*
+---
+**syntax:** ok, err = ngx.shared.DICT:safe_set(key, value, exptime?, flags?)
 
-**context:** *init_by_lua&#42;, set_by_lua&#42;, rewrite_by_lua&#42;, access_by_lua&#42;, content_by_lua&#42;, header_filter_by_lua&#42;, body_filter_by_lua&#42;, log_by_lua&#42;, ngx.timer.&#42;, balancer_by_lua&#42;, ssl_certificate_by_lua&#42;*
+**context:** init_by_lua*, set_by_lua*, rewrite_by_lua*, access_by_lua*, content_by_lua*, header_filter_by_lua*, body_filter_by_lua*, log_by_lua*, ngx.timer.*, balancer_by_lua*, ssl_certificate_by_lua*
 
-Similar to the [set](#ngxshareddictset) method, but never overrides the (least recently used) unexpired items in the store when running out of storage in the shared memory zone. In this case, it will immediately return `nil` and the string "no memory".
+与set方法差不多，不同的地方是，在设置一对key-value的时候，即使是共享内存空间不足的情况下，也不会使用LRU算法来移除未过期的key-value对。 此种情况下，会直接返回`nil`和错误描述`"no memory"`.
 
-This feature was first introduced in the `v0.7.18` release.
+该api首次发行在版本v0.7.18。
 
 See also [ngx.shared.DICT](#ngxshareddict).
 
 [Back to TOC](#nginx-api-for-lua)
 
 ngx.shared.DICT.add
--------------------
-**syntax:** *success, err, forcible = ngx.shared.DICT:add(key, value, exptime?, flags?)*
+---
+**syntax:** success, err, forcible = ngx.shared.DICT:add(key, value, exptime?, flags?)
 
-**context:** *init_by_lua&#42;, set_by_lua&#42;, rewrite_by_lua&#42;, access_by_lua&#42;, content_by_lua&#42;, header_filter_by_lua&#42;, body_filter_by_lua&#42;, log_by_lua&#42;, ngx.timer.&#42;, balancer_by_lua&#42;, ssl_certificate_by_lua&#42;*
+**context:** init_by_lua*, set_by_lua*, rewrite_by_lua*, access_by_lua*, content_by_lua*, header_filter_by_lua*, body_filter_by_lua*, log_by_lua*, ngx.timer.*, balancer_by_lua*, ssl_certificate_by_lua*
 
-Just like the [set](#ngxshareddictset) method, but only stores the key-value pair into the dictionary [ngx.shared.DICT](#ngxshareddict) if the key does *not* exist.
+与set方法差不多，不同地方是，只有在当前key-value对在`ngx.shared.DICT`中不存在时，才会进行设置。
 
-If the `key` argument already exists in the dictionary (and not expired for sure), the `success` return value will be `false` and the `err` return value will be `"exists"`.
+如果`key`参数已存在于字典当中（当然还没有过期），返回值`success`的值是`false`，返回值`err`的值是`exists`。
 
-This feature was first introduced in the `v0.3.1rc22` release.
+该api首次发行在版本v0.3.1rc22。
 
 See also [ngx.shared.DICT](#ngxshareddict).
 
 [Back to TOC](#nginx-api-for-lua)
 
 ngx.shared.DICT.safe_add
-------------------------
-**syntax:** *ok, err = ngx.shared.DICT:safe_add(key, value, exptime?, flags?)*
+---
+**syntax:** ok, err = ngx.shared.DICT:safe_add(key, value, exptime?, flags?)
 
-**context:** *init_by_lua&#42;, set_by_lua&#42;, rewrite_by_lua&#42;, access_by_lua&#42;, content_by_lua&#42;, header_filter_by_lua&#42;, body_filter_by_lua&#42;, log_by_lua&#42;, ngx.timer.&#42;, balancer_by_lua&#42;, ssl_certificate_by_lua&#42;*
+**context:** init_by_lua*, set_by_lua*, rewrite_by_lua*, access_by_lua*, content_by_lua*, header_filter_by_lua*, body_filter_by_lua*, log_by_lua*, ngx.timer.*, balancer_by_lua*, ssl_certificate_by_lua*
 
-Similar to the [add](#ngxshareddictadd) method, but never overrides the (least recently used) unexpired items in the store when running out of storage in the shared memory zone. In this case, it will immediately return `nil` and the string "no memory".
+与add方法相似，不同的地方是，在添加一对key-value的时候，即使是共享内存空间不足的情况下，也不会使用LRU算法来移除未过期的key-value对。 此种情况下，会直接返回`nil`和错误描述`"no memory"`.
 
-This feature was first introduced in the `v0.7.18` release.
+该api首次发行在版本v0.7.18。
 
 See also [ngx.shared.DICT](#ngxshareddict).
 
 [Back to TOC](#nginx-api-for-lua)
 
 ngx.shared.DICT.replace
------------------------
-**syntax:** *success, err, forcible = ngx.shared.DICT:replace(key, value, exptime?, flags?)*
+---
+**syntax:** success, err, forcible = ngx.shared.DICT:replace(key, value, exptime?, flags?)
 
-**context:** *init_by_lua&#42;, set_by_lua&#42;, rewrite_by_lua&#42;, access_by_lua&#42;, content_by_lua&#42;, header_filter_by_lua&#42;, body_filter_by_lua&#42;, log_by_lua&#42;, ngx.timer.&#42;, balancer_by_lua&#42;, ssl_certificate_by_lua&#42;*
+**context:** init_by_lua*, set_by_lua*, rewrite_by_lua*, access_by_lua*, content_by_lua*, header_filter_by_lua*, body_filter_by_lua*, log_by_lua*, ngx.timer.*, balancer_by_lua*, ssl_certificate_by_lua*
 
-Just like the [set](#ngxshareddictset) method, but only stores the key-value pair into the dictionary [ngx.shared.DICT](#ngxshareddict) if the key *does* exist.
+与set方法相似，不同的是，只有在key-value对存在于字典`ngx.shared.DICT`当中的情况下才会进行设置。
 
-If the `key` argument does *not* exist in the dictionary (or expired already), the `success` return value will be `false` and the `err` return value will be `"not found"`.
+如果`key`参数不存在不存在于字典当中的时候（或者已经过期），返回值`success`的值是`false`，返回值`err`的值是`not found`。
 
-This feature was first introduced in the `v0.3.1rc22` release.
+该api首次发行在版本v0.3.1rc22。
 
 See also [ngx.shared.DICT](#ngxshareddict).
 
 [Back to TOC](#nginx-api-for-lua)
 
 ngx.shared.DICT.delete
-----------------------
-**syntax:** *ngx.shared.DICT:delete(key)*
+---
+**syntax:** ngx.shared.DICT:delete(key)
 
-**context:** *init_by_lua&#42;, set_by_lua&#42;, rewrite_by_lua&#42;, access_by_lua&#42;, content_by_lua&#42;, header_filter_by_lua&#42;, body_filter_by_lua&#42;, log_by_lua&#42;, ngx.timer.&#42;, balancer_by_lua&#42;, ssl_certificate_by_lua&#42;*
+**context:** init_by_lua*, set_by_lua*, rewrite_by_lua*, access_by_lua*, content_by_lua*, header_filter_by_lua*, body_filter_by_lua*, log_by_lua*, ngx.timer.*, balancer_by_lua*, ssl_certificate_by_lua*
 
-Unconditionally removes the key-value pair from the shm-based dictionary [ngx.shared.DICT](#ngxshareddict).
+无条件的从shm-based字典`ngx.shared.DICT`移除一对key-value。
 
-It is equivalent to `ngx.shared.DICT:set(key, nil)`.
+此方法与`ngx.shared.DICT:set(key, nil)`一样。
 
-This feature was first introduced in the `v0.3.1rc22` release.
+该api首次发行在版本v0.3.1rc22。
 
 See also [ngx.shared.DICT](#ngxshareddict).
 
 [Back to TOC](#nginx-api-for-lua)
 
 ngx.shared.DICT.incr
---------------------
-**syntax:** *newval, err = ngx.shared.DICT:incr(key, value)*
+---
+**syntax:** newval, err = ngx.shared.DICT:incr(key, value)
 
-**context:** *init_by_lua&#42;, set_by_lua&#42;, rewrite_by_lua&#42;, access_by_lua&#42;, content_by_lua&#42;, header_filter_by_lua&#42;, body_filter_by_lua&#42;, log_by_lua&#42;, ngx.timer.&#42;, balancer_by_lua&#42;, ssl_certificate_by_lua&#42;*
+**context:** init_by_lua*, set_by_lua*, rewrite_by_lua*, access_by_lua*, content_by_lua*, header_filter_by_lua*, body_filter_by_lua*, log_by_lua*, ngx.timer.*, balancer_by_lua*, ssl_certificate_by_lua*
 
-Increments the (numerical) value for `key` in the shm-based dictionary [ngx.shared.DICT](#ngxshareddict) by the step value `value`. Returns the new resulting number if the operation is successfully completed or `nil` and an error message otherwise.
+对shm-based字典ngx.shared.DICT中`key`所对应的数值类型的value，根据`value`进行递增。 如果此方法执行成功，则返回递增之后的最新值。 否则返回`nil`和错误信息。 
 
-The key must already exist in the dictionary, otherwise it will return `nil` and `"not found"`.
+参数`key`必须存在于字典当中，否则返回`nil`和`not found`。
 
-If the original value is not a valid Lua number in the dictionary, it will return `nil` and `"not a number"`.
+如果字典中的原来的值并不是一个有效的Lua数值类型，则返回`nil`和`not a number`。
 
-The `value` argument can be any valid Lua numbers, like negative numbers or floating-point numbers.
+参数`value`可以是任意有效的Lua数值类型的值，比如负数或浮点数也可以。
 
-This feature was first introduced in the `v0.3.1rc22` release.
+该api首次发行在版本v0.3.1rc22。
 
 See also [ngx.shared.DICT](#ngxshareddict).
 
 [Back to TOC](#nginx-api-for-lua)
 
 ngx.shared.DICT.flush_all
--------------------------
-**syntax:** *ngx.shared.DICT:flush_all()*
+---
+**syntax:** ngx.shared.DICT:flush_all()
 
-**context:** *init_by_lua&#42;, set_by_lua&#42;, rewrite_by_lua&#42;, access_by_lua&#42;, content_by_lua&#42;, header_filter_by_lua&#42;, body_filter_by_lua&#42;, log_by_lua&#42;, ngx.timer.&#42;, balancer_by_lua&#42;, ssl_certificate_by_lua&#42;*
+**context:** init_by_lua*, set_by_lua*, rewrite_by_lua*, access_by_lua*, content_by_lua*, header_filter_by_lua*, body_filter_by_lua*, log_by_lua*, ngx.timer.*, balancer_by_lua*, ssl_certificate_by_lua*
 
-Flushes out all the items in the dictionary. This method does not actuall free up all the memory blocks in the dictionary but just marks all the existing items as expired.
+将自当中所有的key-value对进行flush。 此方法并不会明确的释放字典中的所有的内存块，仅仅是将字典中所有的key-value对设置为过期。
 
-This feature was first introduced in the `v0.5.0rc17` release.
+该api首次发行在版本v0.5.0rc17。
 
 See also [ngx.shared.DICT.flush_expired](#ngxshareddictflush_expired) and [ngx.shared.DICT](#ngxshareddict).
 
 [Back to TOC](#nginx-api-for-lua)
 
 ngx.shared.DICT.flush_expired
------------------------------
-**syntax:** *flushed = ngx.shared.DICT:flush_expired(max_count?)*
+---
+**syntax:** flushed = ngx.shared.DICT:flush_expired(max_count?)
 
-**context:** *init_by_lua&#42;, set_by_lua&#42;, rewrite_by_lua&#42;, access_by_lua&#42;, content_by_lua&#42;, header_filter_by_lua&#42;, body_filter_by_lua&#42;, log_by_lua&#42;, ngx.timer.&#42;, balancer_by_lua&#42;, ssl_certificate_by_lua&#42;*
+**context:** init_by_lua*, set_by_lua*, rewrite_by_lua*, access_by_lua*, content_by_lua*, header_filter_by_lua*, body_filter_by_lua*, log_by_lua*, ngx.timer.*, balancer_by_lua*, ssl_certificate_by_lua*
 
-Flushes out the expired items in the dictionary, up to the maximal number specified by the optional `max_count` argument. When the `max_count` argument is given `0` or not given at all, then it means unlimited. Returns the number of items that have actually been flushed.
+将字典中的已过期的key-value对进行flush，直到可选参数`max_count`所指定的数量。 当`max_count`为0或干脆没有传入的时候，不会限制flush的key-value对的数量。 此方法返回确切的flush的key-value对的个数。
 
-Unlike the [flush_all](#ngxshareddictflush_all) method, this method actually free up the memory used by the expired items.
+不像`flush_all`方法，此方法会明确的释放内存空间。
 
-This feature was first introduced in the `v0.6.3` release.
+该api首次发行在版本v0.6.3。
 
 See also [ngx.shared.DICT.flush_all](#ngxshareddictflush_all) and [ngx.shared.DICT](#ngxshareddict).
 
 [Back to TOC](#nginx-api-for-lua)
 
 ngx.shared.DICT.get_keys
-------------------------
-**syntax:** *keys = ngx.shared.DICT:get_keys(max_count?)*
+---
+**syntax:** keys = ngx.shared.DICT:get_keys(max_count?)
 
-**context:** *init_by_lua&#42;, set_by_lua&#42;, rewrite_by_lua&#42;, access_by_lua&#42;, content_by_lua&#42;, header_filter_by_lua&#42;, body_filter_by_lua&#42;, log_by_lua&#42;, ngx.timer.&#42;, balancer_by_lua&#42;, ssl_certificate_by_lua&#42;*
+**context:** init_by_lua*, set_by_lua*, rewrite_by_lua*, access_by_lua*, content_by_lua*, header_filter_by_lua*, body_filter_by_lua*, log_by_lua*, ngx.timer.*, balancer_by_lua*, ssl_certificate_by_lua*
 
-Fetch a list of the keys from the dictionary, up to `<max_count>`.
+从字典当中抓取keys列表，直到`<max_count>`。
 
-By default, only the first 1024 keys (if any) are returned. When the `<max_count>` argument is given the value `0`, then all the keys will be returned even there is more than 1024 keys in the dictionary.
+默认情况下，只会返回前1024个（如果字典当中真有这些的话）keys。 当`<max_count>`参数是0的时候，会返回所有的key，即使超过1024个。
 
-**WARNING** Be careful when calling this method on dictionaries with a really huge number of keys. This method may lock the dictionary for quite a while and block all the nginx worker processes that are trying to access the dictionary.
+**注意** 当一个字典当中存在大量的key的时候，请谨慎调用此方法。 此方法可能会锁住当前字典很长一段时间，并锁住所有试图从当前字典中获取内容的nginx worker进程。
 
-This feature was first introduced in the `v0.7.3` release.
+该api首次发行在版本v0.7.3。
 
 [Back to TOC](#nginx-api-for-lua)
 
